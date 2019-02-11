@@ -3,6 +3,8 @@ export interface AppAction {
   name: string
   input?: string
   value?: string
+  state?: object
+  id?: number | undefined
   condition?: DataCondition
 }
 

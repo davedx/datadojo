@@ -1,4 +1,4 @@
-import React, { useReducer } from 'react'
+import React, { useReducer, useEffect } from 'react'
 import './App.css'
 import { get, map, cloneDeep } from 'lodash-es'
 
@@ -6,6 +6,8 @@ import {sample1} from './sample1'
 
 import {TransformDetails} from './TransformDetails'
 import { AppAction, DataInfo, DataCondition } from './types'
+
+const baseUrl = window.location.port === '3000' ? 'http://localhost:3001' : '/api'
 
 interface StringMap {
   [index: string]: any
@@ -70,6 +72,9 @@ const change = (state: State, action: AppAction) => {
       transform.transform = action.value!
     }
   }
+
+  sync(state)
+
   return {...state}
 }
 
@@ -93,26 +98,45 @@ const removeTransform = (state: State, name: string) => {
   return {...state}
 }
 
-const addCondition = (state: State, action: AppAction) => {
+const saveCondition = (state: State, action: AppAction) => {
   const transform = state.transforms.find(t => t.name === action.name)
   if (transform) {
-    console.log('adding cond: ', action.condition)
-    transform.conditions.push(action.condition!)
+    if (action.id !== undefined) {
+      transform.conditions[action.id] = action.condition!
+    } else {
+      transform.conditions.push(action.condition!)
+    }
+    console.log('conditions now: ', transform.conditions)
     return {...state}
+  }
+  return state
+}
+
+const removeCondition = (state: State, action: AppAction) => {
+  const transform = state.transforms.find(t => t.name === action.name)
+  if (transform) {
+    if (action.id !== undefined) {
+      transform.conditions.splice(action.id, 1)
+      return {...state}
+    }
   }
   return state
 }
 
 const reducer = (state: State, action: AppAction) => {
   switch (action.type) {
+    case 'loadState':
+      return {...action.state as State}
     case 'change':
       return change(state, action)
     case 'addTransform':
       return addTransform(state, action.name)
     case 'removeTransform':
       return removeTransform(state, action.name)
-    case 'addCondition':
-      return addCondition(state, action)
+    case 'saveCondition':
+      return saveCondition(state, action)
+    case 'removeCondition':
+      return removeCondition(state, action)
     default:
       throw new Error('invalid action')
   }
@@ -134,8 +158,7 @@ const getInfo = (obj: any): DataInfo => {
 }
 
 const checkData = (data: object, type: string, conditions: DataCondition[]): DataCondition[] => {
-  const checkedConditions = cloneDeep(conditions)//{...conditions}
-  console.log(checkedConditions)
+  const checkedConditions = cloneDeep(conditions)
 
   map(data, (item: object) => {
     checkedConditions.map((condition: DataCondition) => {
@@ -150,13 +173,59 @@ const checkData = (data: object, type: string, conditions: DataCondition[]): Dat
     })
   })
 
-  console.log(checkedConditions)
-
   return checkedConditions
+}
+
+const loadSaved = async(id: number, createdNew: boolean, dispatch: Function) => {
+  if (!createdNew) {
+    console.log(`Loading ${id}...`)
+    try {
+      const response = await fetch(`${baseUrl}/saved/${id}`)
+      const json = await response.json()
+      //console.log('loaded json: ', json)
+      dispatch({
+        type: 'loadState',
+        state: json
+      })
+    } catch (e) {
+      console.error(e)
+    }
+  }
+}
+
+const sync = async(state: State) => {
+  const id = Number(window.location.search.slice(4))
+  console.log(`Syncing ${id}`)
+  try {
+    const result = await fetch(`${baseUrl}/saved/${id}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8'
+      },
+      body: JSON.stringify(state)
+    })
+    const json = await result.json()
+    return json
+  } catch (e) {
+    console.error(e)
+  }
 }
 
 const App = () => {
   const [state, dispatch] = useReducer(reducer, initialState)
+
+  let createdNew = false
+  //console.log(window.location.search)
+  if (window.location.search.length < 1) {
+    window.location.search = '?id=' + Math.floor(Math.random()*10000000)
+    createdNew = true
+  }
+
+  useEffect(() => {
+    const id = Number(window.location.search.slice(4))
+    console.log(`Loading ${id}`)
+    loadSaved(id, createdNew, dispatch)
+  }, [])
 
   let nextInput = ''
   return (
@@ -164,7 +233,7 @@ const App = () => {
       <div className='header'>
         Data Dojo
       </div>
-      {state.transforms.map((transform) => {
+      {state.transforms.map((transform: Transform) => {
         const isChainedInput = nextInput != ''
         const inputString = nextInput ? nextInput : transform.input
         let error = '', inputInfo, outputInfo
@@ -175,7 +244,6 @@ const App = () => {
           inputInfo = getInfo(inputEval)
 
           conditions = checkData(inputEval, inputInfo.type, transform.conditions)
-
           //console.log(inputEval)
           const transformEval = eval(transform.transform)
           const outputEval = transformEval(inputEval)

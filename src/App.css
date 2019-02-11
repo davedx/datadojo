@@ -77,6 +77,14 @@ textarea, input {
   font-size: 25px;
 }
 
+.condition-btn {
+  cursor: pointer;
+  font-size: 24px;
+  background: transparent;
+  border: none;
+  display: block;
+}
+
 .btn {
   border: 1px solid #448;
   background: #669;
@@ -98,6 +106,7 @@ textarea, input {
 .condition-add-btn {
   font-size: 22px;
   line-height: 25px;
+  margin-bottom: 7px;
 }
 
 .condition-modal {

@@ -13,6 +13,8 @@ interface Props {
 
 const noop = () => {}
 
+// {props.duration && <div>duration = {props.duration} ms</div>}
+
 export const InputCell = (props: Props) => {
   const onChange = props.onChange || noop
   return <div className='input-cell'>
@@ -25,6 +27,5 @@ export const InputCell = (props: Props) => {
       ></textarea>
     {props.error && <div style={{color: 'red'}}>Error: {props.error}</div>}
     {props.info && <div>type = {props.info.type}, length = {props.info.length}</div>}
-    {props.duration && <div>duration = {props.duration} ms</div>}
   </div>
 }
