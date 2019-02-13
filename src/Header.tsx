@@ -15,7 +15,7 @@ export const Header = () =>
     Data Dojo
     <a
       className='header-link hl-right'
-      onClick={e => showHelp}
+      onClick={e => { showHelp() }}
       >
       Getting started
     </a>
