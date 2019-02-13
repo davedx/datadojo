@@ -19,6 +19,25 @@ html, body {
   background: #222;
 }
 
+.header-link {
+  display: inline-block;
+  text-decoration: none;
+  color: white;
+  font-family: arial, 'sans serif';
+  border: 1px solid #222;
+  padding: 10px;
+  background: #666;
+  cursor: pointer;
+}
+
+.hl-left {
+  float: left;
+}
+
+.hl-right {
+  float: right;
+}
+
 .footer {
   margin: 90px 0 0 0;
   padding: 30px;
@@ -145,4 +164,18 @@ textarea, input {
 
 .condition-modal .btn:hover {
   background: #88B;
+}
+
+.download-csv-btn {
+  padding: 5px 20px;
+  text-decoration: none;
+  display: inline-block;
+  margin-bottom: 5px;
+}
+
+.data-link {
+  display: block;
+  font-size: 15px;
+  color: white;
+  margin-top: 15px;
 }

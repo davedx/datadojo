@@ -1,3 +1,7 @@
+export interface StringMap {
+  [index: string]: any
+}
+
 export interface AppAction {
   type: string
   name: string
@@ -17,4 +21,17 @@ export interface DataCondition {
   path: string
   rule: string
   passed?: number
+}
+
+export interface Transform {
+  name: string
+  order: number
+  input: string
+  transform: string
+  output: string
+  conditions: DataCondition[]
+}
+
+export interface AppState {
+  transforms: Transform[]
 }

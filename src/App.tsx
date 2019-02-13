@@ -1,30 +1,24 @@
 import React, { useReducer, useEffect } from 'react'
 import './App.css'
-import { get, map, cloneDeep } from 'lodash-es'
+import { get, map, cloneDeep, debounce } from 'lodash-es'
+
+import * as _ from 'lodash-es'
+//import * as csv from 'csvtojson'
 
 import {sample1} from './sample1'
 
-import {TransformDetails} from './TransformDetails'
-import { AppAction, DataInfo, DataCondition } from './types'
+import { TransformDetails } from './TransformDetails'
+import { Header } from './Header'
+import { Transform, DataInfo, DataCondition } from './types'
+import { reducer } from './appReducer'
+import { loadSaved, sync } from './api'
 
-const baseUrl = window.location.port === '3000' ? 'http://localhost:3001' : '/api'
+const debouncedSync = debounce(sync, 250, { maxWait: 1000, trailing: true })
 
-interface StringMap {
-  [index: string]: any
-}
-
-interface Transform {
-  name: string
-  order: number
-  input: string
-  transform: string
-  output: string
-  conditions: DataCondition[]
-}
-
-interface State {
-  transforms: Transform[]
-}
+const ex3 = `a,b,c
+1,2,3
+4,5,6
+7,8,9`
 
 const ex2 = `[{
   name: "dave",
@@ -44,8 +38,8 @@ const initialState = {
   transforms: [{
     name: 'MyTransform1',
     order: 0,
-    input: ex2,
-    transform: '(a) => a.map(i => i.age * 2)',
+    input: ex3,
+    transform: '(a) => a',//_.flatMap(a, i => i)',
     output: '',
     conditions: [{
       path: 'age',
@@ -55,91 +49,10 @@ const initialState = {
     name: 'MyTransform2',
     order: 1,
     input: '',
-    transform: '(a) => a.map(i => i * 3)',
+    transform: '(a) => a.map(i => i.map(j => parseInt(j, 10)))',//.map(i => i * 3)',
     output: '',
     conditions: []
   }]
-}
-
-const defaultTransform = '(a) => a'
-
-const change = (state: State, action: AppAction) => {
-  const transform = state.transforms.find(t => t.name === action.name)
-  if (transform) {
-    if (action.input === 'input') {
-      transform.input = action.value!
-    } else if (action.input === 'transform') {
-      transform.transform = action.value!
-    }
-  }
-
-  sync(state)
-
-  return {...state}
-}
-
-const addTransform = (state: State, name: string) => {
-  const idx = state.transforms.findIndex(t => t.name === name)
-  const id = state.transforms.length+1
-  state.transforms.splice(idx+1, 0, {
-    name: `MyTransform${id}`,
-    order: idx+2,
-    input: '',
-    transform: defaultTransform,
-    output: '',
-    conditions: []
-  });
-  return {...state}
-}
-
-const removeTransform = (state: State, name: string) => {
-  const idx = state.transforms.findIndex(t => t.name === name)
-  state.transforms.splice(idx, 1)
-  return {...state}
-}
-
-const saveCondition = (state: State, action: AppAction) => {
-  const transform = state.transforms.find(t => t.name === action.name)
-  if (transform) {
-    if (action.id !== undefined) {
-      transform.conditions[action.id] = action.condition!
-    } else {
-      transform.conditions.push(action.condition!)
-    }
-    console.log('conditions now: ', transform.conditions)
-    return {...state}
-  }
-  return state
-}
-
-const removeCondition = (state: State, action: AppAction) => {
-  const transform = state.transforms.find(t => t.name === action.name)
-  if (transform) {
-    if (action.id !== undefined) {
-      transform.conditions.splice(action.id, 1)
-      return {...state}
-    }
-  }
-  return state
-}
-
-const reducer = (state: State, action: AppAction) => {
-  switch (action.type) {
-    case 'loadState':
-      return {...action.state as State}
-    case 'change':
-      return change(state, action)
-    case 'addTransform':
-      return addTransform(state, action.name)
-    case 'removeTransform':
-      return removeTransform(state, action.name)
-    case 'saveCondition':
-      return saveCondition(state, action)
-    case 'removeCondition':
-      return removeCondition(state, action)
-    default:
-      throw new Error('invalid action')
-  }
 }
 
 const getInfo = (obj: any): DataInfo => {
@@ -157,7 +70,7 @@ const getInfo = (obj: any): DataInfo => {
   return {type, length}
 }
 
-const checkData = (data: object, type: string, conditions: DataCondition[]): DataCondition[] => {
+const checkData = (data: object, conditions: DataCondition[]): DataCondition[] => {
   const checkedConditions = cloneDeep(conditions)
 
   map(data, (item: object) => {
@@ -176,38 +89,53 @@ const checkData = (data: object, type: string, conditions: DataCondition[]): Dat
   return checkedConditions
 }
 
-const loadSaved = async(id: number, createdNew: boolean, dispatch: Function) => {
-  if (!createdNew) {
-    console.log(`Loading ${id}...`)
-    try {
-      const response = await fetch(`${baseUrl}/saved/${id}`)
-      const json = await response.json()
-      //console.log('loaded json: ', json)
-      dispatch({
-        type: 'loadState',
-        state: json
-      })
-    } catch (e) {
-      console.error(e)
-    }
+declare global {
+  interface Window {
+    _: any
+    csv: any
   }
 }
 
-const sync = async(state: State) => {
-  const id = Number(window.location.search.slice(4))
-  console.log(`Syncing ${id}`)
+const loadLibs = () => {
+  window._ = _
+}
+
+const parseCsv = (input: string): string[][] => {
+  const vals = input.split("\n")
+  vals.splice(0, 1)
+  return vals.map(line => line.split(","))
+}
+
+const parseData = (input: string): object => {
+  let inputEval
+  const probableDataType = input[0] === '{' || input[0] === '[' ? 'json' : 'csv'
+  switch (probableDataType) {
+    case 'json':
+      inputEval = eval(input)
+      break
+    case 'csv':
+      inputEval = parseCsv(input)
+      break
+    default:
+      throw new Error(`Cannot detect or parse input type. Supported: json, csv`)
+  }
+  return inputEval
+}
+
+const downloadAsCsv = (e: any, output: string) => {
+  if (output[0] !== '[') {
+    e.preventDefault()
+    return alert('Output data must be an array of arrays')
+  }
   try {
-    const result = await fetch(`${baseUrl}/saved/${id}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8'
-      },
-      body: JSON.stringify(state)
-    })
-    const json = await result.json()
-    return json
+    const vals = JSON.parse(output) as [][]
+    const csvVals = vals[0].map((col: any, idx: number) => `H_${idx}`)
+    vals.splice(0, 0, csvVals as [])
+    const csv = vals
+      .join("\n")
+    e.target.href = "data:text/csv;base64," + btoa(csv)
   } catch (e) {
-    console.error(e)
+    alert('Failed to convert to CSV. Ensure data is an array of arrays')
   }
 }
 
@@ -215,24 +143,24 @@ const App = () => {
   const [state, dispatch] = useReducer(reducer, initialState)
 
   let createdNew = false
-  //console.log(window.location.search)
+
   if (window.location.search.length < 1) {
     window.location.search = '?id=' + Math.floor(Math.random()*10000000)
     createdNew = true
   }
 
+  const id = Number(window.location.search.slice(4))
+
   useEffect(() => {
-    const id = Number(window.location.search.slice(4))
     console.log(`Loading ${id}`)
     loadSaved(id, createdNew, dispatch)
+    loadLibs()
   }, [])
 
   let nextInput = ''
-  return (
+  let rendered = (
     <div className='app'>
-      <div className='header'>
-        Data Dojo
-      </div>
+      <Header />
       {state.transforms.map((transform: Transform) => {
         const isChainedInput = nextInput != ''
         const inputString = nextInput ? nextInput : transform.input
@@ -240,10 +168,9 @@ const App = () => {
         let conditions = transform.conditions
 
         try {
-          const inputEval = eval(inputString)
+          const inputEval = parseData(inputString)
           inputInfo = getInfo(inputEval)
-
-          conditions = checkData(inputEval, inputInfo.type, transform.conditions)
+          conditions = checkData(inputEval, transform.conditions)
           //console.log(inputEval)
           const transformEval = eval(transform.transform)
           const outputEval = transformEval(inputEval)
@@ -268,12 +195,25 @@ const App = () => {
           error={error}
         />
       })}
+      <a
+        className='btn download-csv-btn'
+        download='download.csv'
+        type='text/csv'
+        onClick={e => downloadAsCsv(e, nextInput)}
+      >
+        Download final output as CSV
+      </a>
+      <a className='data-link' target='__blank' href={`/api/saved/${id}/csv`}>CSV URL</a>
+      <a className='data-link' target='__blank' href={`/api/saved/${id}/json`}>JSON URL</a>
       <div className='footer'>
-        Data Dojo is a <a href='http://redskyforge.com'>Red Sky Forge</a> project<br/><br/>
+        Data Dojo is a <a href='https://twitter.com/redskyforge'>Red Sky Forge</a> project<br/><br/>
         Inspired by the work of John McCarthy and Alan Kay
       </div>
     </div>
   )
+  //console.log('output: ', nextInput)
+  debouncedSync(state, nextInput)
+  return rendered
 }
 
 export default App
