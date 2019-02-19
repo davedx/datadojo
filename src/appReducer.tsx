@@ -70,10 +70,24 @@ const setLanguage = (state: AppState, action: LanguageAction) => {
   return state
 }
 
+// upgrade persisted state on backend to latest version
+const patchState = (state: AppState): AppState => {
+  const patchedState = {
+    ...state,
+    transforms: state.transforms.map(t => {
+      if (t.language === undefined) {
+        t.language = 'JavaScript'
+      }
+      return t
+    })
+  }
+  return patchedState
+}
+
 export const reducer = (state: AppState, action: AppAction) => {
   switch (action.type) {
     case 'loadState':
-      return {...action.state as AppState}
+      return patchState(action.state as AppState)
     case 'change':
       return change(state, action)
     case 'addTransform':
