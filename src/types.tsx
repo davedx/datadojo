@@ -12,6 +12,12 @@ export interface AppAction {
   condition?: DataCondition
 }
 
+export type Language = 'JavaScript' | 'Python'
+
+export interface LanguageAction extends AppAction {
+  language: Language
+}
+
 export interface DataInfo {
   type: string
   length: number
@@ -25,6 +31,7 @@ export interface DataCondition {
 
 export interface Transform {
   name: string
+  language: Language
   order: number
   input: string
   transform: string

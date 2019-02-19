@@ -66,7 +66,7 @@ export const Conditions = (props: Props) => {
           &#9679;
         </button>)
     })}
-    <div className='condition-modal' style={{display: modalDisplay}}>
+    <div className='modal condition-modal' style={{display: modalDisplay}}>
       <h3>{title} condition for {props.name}</h3>
       <div>
         <label htmlFor={'path'}>Data path</label>

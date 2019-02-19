@@ -1,4 +1,4 @@
-import { AppState, AppAction } from './types'
+import { AppState, AppAction, LanguageAction } from './types'
 
 const defaultTransform = '(a) => a'
 
@@ -20,6 +20,7 @@ const addTransform = (state: AppState, name: string) => {
   const id = state.transforms.length+1
   state.transforms.splice(idx+1, 0, {
     name: `MyTransform${id}`,
+    language: 'JavaScript',
     order: idx+2,
     input: '',
     transform: defaultTransform,
@@ -60,6 +61,15 @@ const removeCondition = (state: AppState, action: AppAction) => {
   return state
 }
 
+const setLanguage = (state: AppState, action: LanguageAction) => {
+  const transform = state.transforms.find(t => t.name === action.name)
+  if (transform) {
+    transform.language = action.language
+    return {...state}
+  }
+  return state
+}
+
 export const reducer = (state: AppState, action: AppAction) => {
   switch (action.type) {
     case 'loadState':
@@ -74,6 +84,8 @@ export const reducer = (state: AppState, action: AppAction) => {
       return saveCondition(state, action)
     case 'removeCondition':
       return removeCondition(state, action)
+    case 'setLanguage':
+      return setLanguage(state, action as LanguageAction)
     default:
       throw new Error('invalid action')
   }

@@ -9,6 +9,7 @@ interface Props {
   duration?: number
   readonly?: boolean
   info?: DataInfo
+  id: string
 }
 
 const noop = () => {}
@@ -17,9 +18,10 @@ const noop = () => {}
 
 export const InputCell = (props: Props) => {
   const onChange = props.onChange || noop
-  return <div className='input-cell'>
+  return <React.Fragment>
     <div className='label'>{props.label}</div>
     <textarea
+      id={props.id}
       style={{display: 'inline-block', width: 392, height: 500, margin: 0, padding: 3}}
       value={props.value}
       onChange={onChange}
@@ -27,5 +29,5 @@ export const InputCell = (props: Props) => {
       ></textarea>
     {props.error && <div style={{color: 'red'}}>Error: {props.error}</div>}
     {props.info && <div>type = {props.info.type}, length = {props.info.length}</div>}
-  </div>
+  </React.Fragment>
 }

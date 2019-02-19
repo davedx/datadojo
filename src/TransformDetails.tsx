@@ -1,10 +1,11 @@
 import React from 'react'
-import { AppAction, DataInfo, DataCondition } from './types'
+import { AppAction, DataInfo, DataCondition, LanguageAction, Language } from './types'
 import { InputCell } from './InputCell'
 import { Conditions } from './Conditions'
 
 interface Props {
   name: string
+  language: Language
   input: string
   inputInfo: DataInfo | undefined
   transform: string
@@ -45,41 +46,67 @@ export function TransformDetails(props: Props) {
         dataLength={props.inputInfo ? props.inputInfo.length : 0}
         />}
     </div>
-    <InputCell
-      readonly={props.isChainedInput}
-      onChange={(e: any) => {
-        if (!props.isChainedInput) {
+    <div className='input-cell'>
+      <InputCell
+        readonly={props.isChainedInput}
+        id={`input-id_${props.name}`}
+        onChange={(e: any) => {
+          if (!props.isChainedInput) {
+            props.dispatch({
+              type: 'change',
+              name: props.name,
+              input: 'input',
+              value: e.target.value
+            })
+          }
+        }}
+        label={'Input'}
+        value={props.input}
+        info={props.inputInfo}
+      />
+    </div>
+    <div className='input-cell'>
+      <InputCell
+        id={`transform-id_${props.name}`}
+        onChange={(e: any) => {
           props.dispatch({
             type: 'change',
             name: props.name,
-            input: 'input',
+            input: 'transform',
             value: e.target.value
           })
-        }
-      }}
-      label={'Input'}
-      value={props.input}
-      info={props.inputInfo}
-    />
-    <InputCell
-      onChange={(e: any) => {
-        props.dispatch({
-          type: 'change',
-          name: props.name,
-          input: 'transform',
-          value: e.target.value
-        })
-      }}
-      label={props.name}
-      error={props.error}
-      value={props.transform}
-      duration={1}
-    />
-    <InputCell
-      label={'Output'}
-      value={props.output}
-      info={props.outputInfo}
-    />
+        }}
+        label={props.name}
+        error={props.error}
+        value={props.transform}
+        duration={1}
+      />
+      <select className='input-language'
+        onChange={(e: any) => {
+          const el = e.target
+          const value = el.options[el.selectedIndex].value
+
+          const action: LanguageAction = {
+            type: 'setLanguage',
+            name: props.name,
+            language: value
+          }
+          
+          props.dispatch(action)
+        }}
+        value={props.language}>
+        <option value='JavaScript'>JavaScript</option>
+        <option value='Python'>Python</option>
+      </select>
+    </div>
+    <div className='input-cell'>
+      <InputCell
+        id={`output-id_${props.name}`}
+        label={'Output'}
+        value={props.output}
+        info={props.outputInfo}
+      />
+    </div>
     <div className='transform-btns'>
       <button
         className='transform-btn btn' onClick={() => props.dispatch({

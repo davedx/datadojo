@@ -6,8 +6,8 @@ html, body {
   text-align: center;
 }
 
-.app-link {
-  color: #61dafb;
+.link {
+  color: white;
 }
 
 .header {
@@ -72,7 +72,7 @@ textarea, input {
 
 .input-cell {
   width: 400px;
-  height: 550px;
+  min-height: 550px;
   margin: 0;
   padding: 0;
   vertical-align: top;
@@ -81,6 +81,10 @@ textarea, input {
 
 .label {
   margin: 4px;
+}
+
+.input-language {
+  margin: 10px 0;
 }
 
 .transform-btns {
@@ -128,17 +132,65 @@ textarea, input {
   margin-bottom: 7px;
 }
 
-.condition-modal {
+.modal {
   border: 1px solid #448;
   background: #669;
   color: white;
   position: fixed;
+}
+
+.condition-modal {
   top: 250px;
+  bottom: 250px;
   left: 500px;
   right: 500px;
-  bottom: 250px;
   min-width: 400px;
   min-height: 250px;
+}
+
+.help-modal {
+  top: 150px;
+  left: 150px;
+  right: 150px;
+  bottom: 150px;
+  font-family: arial, 'sans-serif'
+}
+
+.help-modal h2 {
+  margin: 50px;
+  font-size: 20px;
+}
+
+.help-exp {
+  font-weight: bold;
+  color: #f72;
+}
+
+.help-col {
+  font-weight: bold;
+  color: #7Bf;
+}
+
+.help-deb {
+  font-weight: bold;
+  color: #4C4;
+}
+
+.help-body {
+  max-width: 800px;
+  margin: 20px auto;
+  text-align: left;
+}
+
+.help-body li {
+  list-style-type: none;
+  padding: 4px 0;
+}
+
+.help-body li:before {
+  content: "ⓘ";
+  font-size: 16px;
+  padding-right: 10px;
 }
 
 .condition-modal h3 {

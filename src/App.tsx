@@ -1,24 +1,27 @@
 import React, { useReducer, useEffect } from 'react'
 import './App.css'
-import { get, map, cloneDeep, debounce } from 'lodash-es'
+import { debounce } from 'lodash-es'
 
 import * as _ from 'lodash-es'
-//import * as csv from 'csvtojson'
 
 import {sample1} from './sample1'
 
 import { TransformDetails } from './TransformDetails'
 import { Header } from './Header'
-import { Transform, DataInfo, DataCondition } from './types'
+import { Transform, Language } from './types'
 import { reducer } from './appReducer'
 import { loadSaved, sync } from './api'
+import { parseData, getInfo, checkData, loadInputFromUrl, downloadAsCsv } from './dataUtils';
+import { evaluate } from './languages';
 
 const debouncedSync = debounce(sync, 250, { maxWait: 1000, trailing: true })
 
-const ex3 = `a,b,c
-1,2,3
-4,5,6
-7,8,9`
+const ex3 = `username,logins,money
+dave@example.com,4,150
+john@example.com,0,0
+bart@example.com,12,2500,
+jim@example.com,3,205
+`
 
 const ex2 = `[{
   name: "dave",
@@ -37,9 +40,13 @@ const ex1 = `[
 const initialState = {
   transforms: [{
     name: 'MyTransform1',
+    language: 'Python' as Language,
     order: 0,
     input: ex3,
-    transform: '(a) => a',//_.flatMap(a, i => i)',
+    transform: `def x(a):
+    return a
+`,
+    //(a) => a',//_.flatMap(a, i => i)',
     output: '',
     conditions: [{
       path: 'age',
@@ -47,6 +54,7 @@ const initialState = {
     }]
   }, {
     name: 'MyTransform2',
+    language: 'JavaScript' as Language,
     order: 1,
     input: '',
     transform: '(a) => a.map(i => i.map(j => parseInt(j, 10)))',//.map(i => i * 3)',
@@ -55,88 +63,17 @@ const initialState = {
   }]
 }
 
-const getInfo = (obj: any): DataInfo => {
-  let type, length
-  if (obj.constructor === Array) {
-    type = 'array'
-    length = obj.length
-  } else if (obj instanceof Object) {
-    type = 'object'
-    length = Object.keys(obj).length
-  } else {
-    type = 'unknown'
-    length = 0
-  }
-  return {type, length}
-}
-
-const checkData = (data: object, conditions: DataCondition[]): DataCondition[] => {
-  const checkedConditions = cloneDeep(conditions)
-
-  map(data, (item: object) => {
-    checkedConditions.map((condition: DataCondition) => {
-      const val = get(item, condition.path)
-      const rule = eval(`(a) => a ${condition.rule}`)
-      if (!condition.passed) {
-        condition.passed = 0
-      }
-      if (rule(val)) {
-        condition.passed++
-      }
-    })
-  })
-
-  return checkedConditions
-}
-
 declare global {
   interface Window {
     _: any
     csv: any
+    brython: any
+    __BRYTHON__: any
   }
 }
 
 const loadLibs = () => {
   window._ = _
-}
-
-const parseCsv = (input: string): string[][] => {
-  const vals = input.split("\n")
-  vals.splice(0, 1)
-  return vals.map(line => line.split(","))
-}
-
-const parseData = (input: string): object => {
-  let inputEval
-  const probableDataType = input[0] === '{' || input[0] === '[' ? 'json' : 'csv'
-  switch (probableDataType) {
-    case 'json':
-      inputEval = eval(input)
-      break
-    case 'csv':
-      inputEval = parseCsv(input)
-      break
-    default:
-      throw new Error(`Cannot detect or parse input type. Supported: json, csv`)
-  }
-  return inputEval
-}
-
-const downloadAsCsv = (e: any, output: string) => {
-  if (output[0] !== '[') {
-    e.preventDefault()
-    return alert('Output data must be an array of arrays')
-  }
-  try {
-    const vals = JSON.parse(output) as [][]
-    const csvVals = vals[0].map((col: any, idx: number) => `H_${idx}`)
-    vals.splice(0, 0, csvVals as [])
-    const csv = vals
-      .join("\n")
-    e.target.href = "data:text/csv;base64," + btoa(csv)
-  } catch (e) {
-    alert('Failed to convert to CSV. Ensure data is an array of arrays')
-  }
 }
 
 const App = () => {
@@ -157,8 +94,17 @@ const App = () => {
     loadLibs()
   }, [])
 
+  useEffect(() => {
+    // TODO: maybe this needs debouncing, what's indexOf behave like on huge strings?
+    if (state.transforms.length > 0 &&
+      state.transforms[0].input.indexOf('http') === 0) {
+      loadInputFromUrl(state.transforms[0].name, state.transforms[0].input, dispatch)
+    }
+  })
+
   let nextInput = ''
-  let rendered = (
+
+  const rendered = (
     <div className='app'>
       <Header />
       {state.transforms.map((transform: Transform) => {
@@ -172,18 +118,26 @@ const App = () => {
           inputInfo = getInfo(inputEval)
           conditions = checkData(inputEval, transform.conditions)
           //console.log(inputEval)
-          const transformEval = eval(transform.transform)
+          const transformEval = evaluate(transform.transform, transform.language)
+          //console.log(transformEval)
           const outputEval = transformEval(inputEval)
           outputInfo = getInfo(outputEval)
           nextInput = JSON.stringify(outputEval, null, 2)
           //console.log(nextInput)
         } catch (e) {
+          let message = e.message
+          if (e.stack.indexOf('brython') !== -1) {
+            message = `${e.message} (Brython compile error)`
+          }
+          console.error(e)
+
           nextInput = ''
-          error = e.message
+          error = message
         }
         return <TransformDetails
           key={transform.name}
           name={transform.name}
+          language={transform.language}
           input={inputString}
           inputInfo={inputInfo}
           conditions={conditions}
@@ -211,8 +165,9 @@ const App = () => {
       </div>
     </div>
   )
-  //console.log('output: ', nextInput)
+
   debouncedSync(state, nextInput)
+
   return rendered
 }
 
