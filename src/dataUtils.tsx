@@ -37,8 +37,11 @@ export const checkData = (data: object, conditions: DataCondition[]): DataCondit
 
 export const parseCsv = (input: string): string[][] => {
   const vals = input.split("\n")
+  const numCommas = vals[0].split(',').length;
+  const numSemicolons = vals[0].split(';').length;
   vals.splice(0, 1)
-  return vals.map(line => line.split(","))
+  const separator = numCommas > numSemicolons ? ',' : ';'
+  return vals.map(line => line.split(separator))
 }
 
 export const parseData = (input: string): object => {
@@ -46,7 +49,8 @@ export const parseData = (input: string): object => {
   const probableDataType = input[0] === '{' || input[0] === '[' ? 'json' : 'csv'
   switch (probableDataType) {
     case 'json':
-      inputEval = eval(input)
+      //console.log('parsing input: ', input)
+      inputEval = JSON.parse(input)
       break
     case 'csv':
       inputEval = parseCsv(input)

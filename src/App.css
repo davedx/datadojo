@@ -19,15 +19,22 @@ html, body {
   background: #222;
 }
 
+.header-links {
+  position: absolute;
+  right: 0;
+  top: 0;
+  padding-right: 15px;
+}
+
 .header-link {
-  display: inline-block;
   text-decoration: none;
   color: white;
   font-family: arial, 'sans serif';
-  border: 1px solid #222;
+  font-size: 18px;
   padding: 10px;
-  background: #666;
   cursor: pointer;
+  margin-top: 20px;
+  margin-right: 5px;
 }
 
 .hl-left {
