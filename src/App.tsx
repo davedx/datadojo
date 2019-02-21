@@ -16,48 +16,20 @@ import { evaluate } from './languages';
 
 const debouncedSync = debounce(sync, 250, { maxWait: 1000, trailing: true })
 
-const ex3 = `username,logins,money
-dave@example.com,4,150
-john@example.com,0,0
-bart@example.com,12,2500,
-jim@example.com,3,205
-`
-
-const ex2 = `[{
-  name: "dave",
-  age: 40
-}, {
-  name: "liam",
-  age: 0
-}]`
-
-const ex1 = `[
-  1,
-  2,
-  3
+const input1 = `[
 ]`
+
+const transform1 = `(a) => {
+  return a
+}`
 
 const initialState = {
   transforms: [{
     name: 'MyTransform1',
-    language: 'Python' as Language,
-    order: 0,
-    input: ex3,
-    transform: `def x(a):
-    return a
-`,
-    //(a) => a',//_.flatMap(a, i => i)',
-    output: '',
-    conditions: [{
-      path: 'age',
-      rule: '> 0'
-    }]
-  }, {
-    name: 'MyTransform2',
     language: 'JavaScript' as Language,
-    order: 1,
-    input: '',
-    transform: '(a) => a.map(i => i.map(j => parseInt(j, 10)))',//.map(i => i * 3)',
+    order: 0,
+    input: input1,
+    transform: transform1,
     output: '',
     conditions: []
   }]

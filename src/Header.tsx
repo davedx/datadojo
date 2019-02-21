@@ -3,16 +3,17 @@ import React, { useState } from 'react'
 interface HelpLinkProps {
   url?: string
   anchor: string
+  external: boolean
   classes: string
 }
 
 const HelpLink = (props: HelpLinkProps) => {
   const url = props.url || 'https://github.com/davedx/datadojo/issues'
   return <a
-  className={props.classes}
-  target='__blank'
-  href={url}>
-    {props.anchor}
+    className={props.classes}
+    target={props.external ? '_blank' : undefined}
+    href={url}>
+      {props.anchor}
   </a>
 }
 
@@ -26,12 +27,14 @@ const Help = () => <div>
       <li>Paste JSON or CSV data into the first input area (CSV will be parsed into an array of arrays)</li>
       <li>Write transforms in the transform area in JavaScript or Python (<HelpLink
         classes='link'
+        external={true}
         anchor='request Scala, Julia or something else'
         />)
       </li>
       <li><HelpLink
         classes='link'
         anchor='Lodash is included'
+        external={true}
         url='https://lodash.com/docs'
       /> - you can use _.flatMap and its friends in your code</li>
       <li>If your final output is an array of arrays, you can download it as a CSV file, or copy the CSV URL and pandas.read_csv() it in Jupyter Notebooks</li>
@@ -54,12 +57,8 @@ export const Header = () => {
     <div className='header-links'>
       <HelpLink
         classes='header-link hl-right'
-        url='/'
-        anchor='Home'
-        />
-      <HelpLink
-        classes='header-link hl-right'
-        anchor='Feature requests'
+        external={true}
+        anchor='GitHub'
         />
       <a
         className='header-link hl-right'
@@ -67,6 +66,12 @@ export const Header = () => {
         >
         Help
       </a>
+      <HelpLink
+        classes='header-link hl-right'
+        external={false}
+        url='/'
+        anchor='Home'
+        />
     </div>
   </div>
 }
