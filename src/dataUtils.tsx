@@ -1,5 +1,5 @@
 import { get, map, cloneDeep } from 'lodash-es'
-import { DataInfo, DataCondition } from './types'
+import { DataInfo, DataCondition, AppState } from './types'
 
 export const getInfo = (obj: any): DataInfo => {
   let type, length
@@ -91,4 +91,12 @@ export const loadInputFromUrl = async(name: string, url: string, dispatch: Funct
   } catch (e) {
     console.error(e)
   }
+}
+
+export const firstTransformIsPySpark = (state: AppState): boolean => {
+  if (state.transforms.length > 0 &&
+    state.transforms[0].language === 'PySpark') {
+    return true
+  }
+  return false
 }

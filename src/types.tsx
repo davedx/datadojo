@@ -12,7 +12,7 @@ export interface AppAction {
   condition?: DataCondition
 }
 
-export type Language = 'JavaScript' | 'Python'
+export type Language = 'JavaScript' | 'Python' | 'PySpark'
 
 export interface LanguageAction extends AppAction {
   language: Language
@@ -36,6 +36,7 @@ export interface Transform {
   input: string
   transform: string
   output: string
+  error?: string
   conditions: DataCondition[]
 }
 

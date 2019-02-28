@@ -22,5 +22,8 @@ export const evaluate = (input: string, language: Language) => {
       return $locals___main__["${functionName}"](__input__); }`
       //console.log(ex_js)
       return eval(ex_js)
+    case 'PySpark':
+      console.log(`Sending ${input} to spark`)
+      return (x:any) => x//[]
   }
 }

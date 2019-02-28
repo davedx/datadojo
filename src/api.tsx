@@ -15,7 +15,7 @@ const maybeConvertToCsv = (output: string): string | undefined => {
   }
 }
 
-export const sync = async(state: AppState, finalOutput: string) => {
+export const sync = async (state: AppState, finalOutput: string) => {
   const id = Number(window.location.search.slice(4))
   console.log(`Syncing ${id}`)
   const maybeCsv = maybeConvertToCsv(finalOutput)
@@ -33,13 +33,14 @@ export const sync = async(state: AppState, finalOutput: string) => {
       body: JSON.stringify(body)
     })
     const json = await result.json()
+    console.log('got result: ', json)
     return json
   } catch (e) {
     console.error(e)
   }
 }
 
-export const loadSaved = async(id: number, createdNew: boolean, dispatch: Function) => {
+export const loadSaved = async (id: number, createdNew: boolean, dispatch: Function) => {
   if (!createdNew) {
     console.log(`Loading ${id}...`)
     try {

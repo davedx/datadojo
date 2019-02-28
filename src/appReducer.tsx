@@ -84,6 +84,30 @@ const patchState = (state: AppState): AppState => {
   return patchedState
 }
 
+const setAsyncOutputResult = (state: AppState, action: AppAction) => {
+//  console.log('setAsyncOutputResult', action)
+  const transform = state.transforms.find(t => t.name === action.name)
+  if (transform) {
+    transform.output = action.value!
+    transform.error = ''
+    return {...state}
+  }
+  return state
+}
+
+const setAsyncErrorResult = (state: AppState, action: AppAction) => {
+  //  console.log('setAsyncOutputResult', action)
+  const err = action.value!
+  const lines = err.split("\n")
+  const progLines = lines.slice(3)
+    const transform = state.transforms.find(t => t.name === action.name)
+    if (transform) {
+      transform.error = progLines.join("\n")
+      return {...state}
+    }
+    return state
+  }
+
 export const reducer = (state: AppState, action: AppAction) => {
   switch (action.type) {
     case 'loadState':
@@ -100,6 +124,10 @@ export const reducer = (state: AppState, action: AppAction) => {
       return removeCondition(state, action)
     case 'setLanguage':
       return setLanguage(state, action as LanguageAction)
+    case 'setAsyncOutputResult':
+      return setAsyncOutputResult(state, action)
+    case 'setAsyncErrorResult':
+      return setAsyncErrorResult(state, action)
     default:
       throw new Error('invalid action')
   }

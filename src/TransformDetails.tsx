@@ -2,6 +2,7 @@ import React from 'react'
 import { AppAction, DataInfo, DataCondition, LanguageAction, Language } from './types'
 import { InputCell } from './InputCell'
 import { Conditions } from './Conditions'
+import { LanguageSelector } from './LanguageSelector'
 
 interface Props {
   name: string
@@ -81,23 +82,11 @@ export function TransformDetails(props: Props) {
         value={props.transform}
         duration={1}
       />
-      <select className='input-language'
-        onChange={(e: any) => {
-          const el = e.target
-          const value = el.options[el.selectedIndex].value
-
-          const action: LanguageAction = {
-            type: 'setLanguage',
-            name: props.name,
-            language: value
-          }
-          
-          props.dispatch(action)
-        }}
-        value={props.language}>
-        <option value='JavaScript'>JavaScript</option>
-        <option value='Python'>Python</option>
-      </select>
+      <LanguageSelector
+        name={props.name}
+        language={props.language}
+        dispatch={props.dispatch}
+      />
     </div>
     <div className='input-cell'>
       <InputCell

@@ -4,14 +4,20 @@ import { debounce } from 'lodash-es'
 
 import * as _ from 'lodash-es'
 
-import {sample1} from './sample1'
-
 import { TransformDetails } from './TransformDetails'
+import { Spark } from './Spark'
 import { Header } from './Header'
-import { Transform, Language } from './types'
+import { Transform, Language, AppState } from './types'
 import { reducer } from './appReducer'
 import { loadSaved, sync } from './api'
-import { parseData, getInfo, checkData, loadInputFromUrl, downloadAsCsv } from './dataUtils';
+import {
+  parseData,
+  getInfo,
+  checkData,
+  loadInputFromUrl,
+  downloadAsCsv,
+  firstTransformIsPySpark
+} from './dataUtils';
 import { evaluate } from './languages';
 
 const debouncedSync = debounce(sync, 250, { maxWait: 1000, trailing: true })
@@ -75,6 +81,16 @@ const App = () => {
   })
 
   let nextInput = ''
+
+  if (firstTransformIsPySpark(state)) {
+    return <div className='app'>
+      <Header />
+      <Spark
+        transform={state.transforms[0]}
+        dispatch={dispatch}
+      />
+    </div>
+  }
 
   const rendered = (
     <div className='app'>
