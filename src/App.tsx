@@ -1,8 +1,10 @@
-import React, { useReducer, useEffect } from 'react'
+import React, { useReducer, useEffect, useState } from 'react'
 import './App.css'
 import { debounce } from 'lodash-es'
 
 import * as _ from 'lodash-es'
+
+import {getAuth} from './auth/auth0'
 
 import { TransformDetails } from './TransformDetails'
 import { Spark } from './Spark'
@@ -66,10 +68,19 @@ const App = () => {
 
   const id = Number(window.location.search.slice(4))
 
+  const auth = getAuth()
+  
   useEffect(() => {
     console.log(`Loading ${id}`)
     loadSaved(id, createdNew, dispatch)
     loadLibs()
+
+    if (/access_token|id_token|error/.test(window.location.hash) &&
+      !auth.isAuthenticated()
+      ) {
+      console.log('calling handleAuthentication...')
+      auth.handleAuthentication()
+    }
   }, [])
 
   useEffect(() => {
@@ -154,7 +165,7 @@ const App = () => {
     </div>
   )
 
-  debouncedSync(state, nextInput)
+  //debouncedSync(state, nextInput)
 
   return rendered
 }
